@@ -2,9 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Admin from "../models/admin.model.js";
 import { JWT_EXPIRES_IN, JWT_SECRET } from "../config/env.js";
+import blacklistedTokens from "../config/blacklistedTokens.js";
 
 export const signUp = async (req, res, next) => {
-  const { name, email, password, job_title } = req.body;
+  const { name, email, password, job_title, role } = req.body;
 
   try {
     // Check if a admin already exists in the database
@@ -26,6 +27,7 @@ export const signUp = async (req, res, next) => {
       email,
       password: hashedPassword,
       job_title,
+      role,
     });
 
     // Generate a JWT token for the admin
@@ -59,6 +61,12 @@ export const signIn = async (req, res, next) => {
       throw error;
     }
 
+    if (admin.block) {
+      return res
+        .status(403)
+        .json({ success: false, message: "This account is blocked" });
+    }
+
     // Check if the password matches
     const isMatch = await bcrypt.compare(password, admin.password);
 
@@ -80,7 +88,15 @@ export const signIn = async (req, res, next) => {
       message: "Admin signed in successfully",
       data: {
         token,
-        admin,
+        admin: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          job_title: admin.job_title,
+          role: admin.role,
+          created_at: admin.created_at,
+          updated_at: admin.updated_at,
+        },
       },
     });
   } catch (error) {
@@ -90,6 +106,12 @@ export const signIn = async (req, res, next) => {
 
 export const signOut = async (req, res, next) => {
   try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (token) {
+      blacklistedTokens.add(token); // Add token to the blacklist
+    }
+
     res.status(200).json({
       success: true,
       message: "User signed out successfully",

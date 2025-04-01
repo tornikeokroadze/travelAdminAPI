@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import authorize from "../middleware/auth.middleware.js";
-import { getAdmins, getAdmin } from "../controllers/admin.controller.js";
+import { getAdmins, getAdmin, createAdmin, updateAdmin, deleteAdmin } from "../controllers/admin.controller.js";
 
 const adminRouter = Router();
 
@@ -9,11 +9,11 @@ adminRouter.get('/', authorize, getAdmins);
 
 adminRouter.get('/:id', authorize, getAdmin);
 
-adminRouter.post('/', (req, res) => res.send({ title: 'CREATE admin' }));
+adminRouter.post('/', authorize, createAdmin);
 
-adminRouter.put('/:id', (req, res) => res.send({ title: 'UPDATE admin' }));
+adminRouter.put('/:id', authorize, updateAdmin);
 
-adminRouter.delete('/:id', (req, res) => res.send({ title: 'DELETE admin' }));
+adminRouter.delete('/:id', authorize, deleteAdmin);
 
 
 export default adminRouter;
