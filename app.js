@@ -3,14 +3,21 @@ import cookieParser from "cookie-parser";
 
 import { PORT } from "./config/env.js";
 
+import errorMiddleware from "./middleware/error.middleware.js";
+import { connectToDatabase } from "./database/pgsql.js";
+
 import adminRouter from "./routes/admin.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import tourRouter from "./routes/tour.routes.js";
+import typeRouter from "./routes/type.routes.js";
+import galleryRouter from "./routes/gallery.routes.js";
+import faqRouter from "./routes/faq.routes.js";
+import contactLidRouter from "./routes/contactLid.routes.js";
+import bookRouter from "./routes/book.routes.js";
+import teamRouter from "./routes/team.routes.js";
 import contactRouter from "./routes/contact.routes.js";
 import aboutRouter from "./routes/about.routes.js";
 
-import errorMiddleware from "./middleware/error.middleware.js";
-import { connectToDatabase } from "./database/pgsql.js";
 
 const app = express();
 
@@ -21,6 +28,12 @@ app.use(cookieParser());
 app.use("/api/auth", authRouter);
 app.use("/api/admins", adminRouter);
 app.use("/api/tours", tourRouter);
+app.use("/api/types", typeRouter);
+app.use("/api/gallery", galleryRouter);
+app.use("/api/faqs", faqRouter);
+app.use("/api/contactlids", contactLidRouter);
+app.use("/api/books", bookRouter);
+app.use("/api/team", teamRouter);
 app.use("/api/contact", contactRouter);
 app.use("/api/about", aboutRouter);
 
