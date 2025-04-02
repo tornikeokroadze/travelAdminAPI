@@ -17,10 +17,7 @@ const Admin = {
   },
 
   async findByEmail(email) {
-    return await db.oneOrNone(
-      "SELECT * FROM admin WHERE email = $1",
-      [email]
-    );
+    return await db.oneOrNone("SELECT * FROM admin WHERE email = $1", [email]);
   },
 
   async create({ name, email, password, job_title, role }) {
@@ -49,6 +46,27 @@ const Admin = {
 
   async delete(id) {
     return await db.result("DELETE FROM admin WHERE id = $1", [id]);
+  },
+
+  async saveResetToken(email, resetToken, expiresAt) {
+    return await db.none(
+      `UPDATE admin SET reset_token = $1, reset_token_expires = $2 WHERE email = $3`,
+      [resetToken, expiresAt, email]
+    );
+  },
+
+  async verifyResetToken(token) {
+    return await db.oneOrNone(
+      `SELECT id, email FROM admin WHERE reset_token = $1 AND reset_token_expires > NOW()`,
+      [token]
+    );
+  },
+
+  async resetPassword(email, newPassword) {
+    return await db.none(
+      `UPDATE admin SET password = $1, reset_token = NULL, reset_token_expires = NULL WHERE email = $2`,
+      [newPassword, email]
+    );
   },
 };
 
