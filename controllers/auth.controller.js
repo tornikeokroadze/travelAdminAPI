@@ -6,10 +6,10 @@ import Admin from "../models/admin.model.js";
 import {
   JWT_EXPIRES_IN,
   JWT_SECRET,
+  NODE_ENV,
   BASE_URL,
   SENDING_EMAIL_ADDRESS,
 } from "../config/env.js";
-import blacklistedTokens from "../config/blacklistedTokens.js";
 import transport from "../middleware/sendMail.middleware.js";
 
 export const signUp = async (req, res, next) => {
@@ -58,8 +58,16 @@ export const signUp = async (req, res, next) => {
 
 export const signIn = async (req, res, next) => {
   try {
-    //it is necessary to add a check if the admin is already authorized.
-    
+    const saveToken = req.cookies.token;
+    if (saveToken) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You are already signed in. Logout first before signing in again.",
+        token: saveToken,
+      });
+    }
+
     const { email, password } = req.body;
 
     const admin = await Admin.findByEmail(email);
@@ -92,23 +100,31 @@ export const signIn = async (req, res, next) => {
       expiresIn: JWT_EXPIRES_IN,
     });
 
-    // Send the response
-    res.status(200).json({
-      success: true,
-      message: "Admin signed in successfully",
-      data: {
-        token,
-        admin: {
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-          job_title: admin.job_title,
-          role: admin.role,
-          created_at: admin.created_at,
-          updated_at: admin.updated_at,
+    // Save token and send the response
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: NODE_ENV === "production",
+        sameSite: "Strict",
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+      .status(200)
+      .json({
+        success: true,
+        message: "Admin signed in successfully",
+        data: {
+          token,
+          admin: {
+            id: admin.id,
+            name: admin.name,
+            email: admin.email,
+            job_title: admin.job_title,
+            role: admin.role,
+            created_at: admin.created_at,
+            updated_at: admin.updated_at,
+          },
         },
-      },
-    });
+      });
   } catch (error) {
     next(error);
   }
@@ -116,15 +132,22 @@ export const signIn = async (req, res, next) => {
 
 export const signOut = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (token) {
-      blacklistedTokens.add(token); // Add token to the blacklist
+    if (!req.cookies.token) {
+      return res.status(400).json({
+        success: false,
+        message: "You are already signed out",
+      });
     }
 
-    res.status(200).json({
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    });
+
+    return res.status(200).json({
       success: true,
-      message: "User signed out successfully",
+      message: "Admin signed out successfully",
     });
   } catch (error) {
     next(error);
@@ -133,7 +156,13 @@ export const signOut = async (req, res, next) => {
 
 export const forgotPassword = async (req, res, next) => {
   try {
-    //it is necessary to add a check if the admin is already authorized.
+    const saveToken = req.cookies.token;
+    if (saveToken) {
+      return res.status(403).json({
+        success: false,
+        message: "You are already signed in",
+      });
+    }
 
     const { email } = req.body;
 
@@ -175,7 +204,11 @@ export const forgotPassword = async (req, res, next) => {
     //          <p>Click <a href="${resetLink}">here</a> to reset your password.</p>`,
     // });
 
-    res.status(200).json({ success: true, message: "Reset link sent to your email.", resetToken: resetToken });
+    res.status(200).json({
+      success: true,
+      message: "Reset link sent to your email.",
+      resetToken: resetToken,
+    });
   } catch (error) {
     next(error);
   }
@@ -186,13 +219,17 @@ export const verifyToken = async (req, res, next) => {
     const { token } = req.query;
 
     if (!token) {
-      return res.status(400).json({ success: false, message: "Token required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Token required" });
     }
 
     const admin = await Admin.verifyResetToken(token);
 
     if (!admin) {
-      return res.status(400).json({ success: false, message: "Invalid or expired token" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired token" });
     }
 
     res.status(200).json({ success: true, message: "Token is valid" });
@@ -206,13 +243,17 @@ export const resetPassword = async (req, res, next) => {
     const { token, new_password } = req.body;
 
     if (!token || !new_password) {
-      return res.status(400).json({ success: false, message: "Token and new password required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Token and new password required" });
     }
 
     const admin = await Admin.verifyResetToken(token);
 
     if (!admin)
-      return res.status(400).json({ success: false, message: "Invalid or expired token" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired token" });
 
     // Hash the password
     const salt = await bcrypt.genSalt(10);

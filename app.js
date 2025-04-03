@@ -1,10 +1,12 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import cron from "node-cron";
 
 import { PORT } from "./config/env.js";
 
 import errorMiddleware from "./middleware/error.middleware.js";
 import { connectToDatabase } from "./database/pgsql.js";
+import checkExpiredTours from "./services/tour.service.js";
 
 import adminRouter from "./routes/admin.routes.js";
 import authRouter from "./routes/auth.routes.js";
@@ -37,7 +39,13 @@ app.use("/api/team", teamRouter);
 app.use("/api/contact", contactRouter);
 app.use("/api/about", aboutRouter);
 
+// This will run at 12:00 AM (midnight) every day
+cron.schedule('0 0 * * *', async () => {
+  await checkExpiredTours();
+});
+
 app.use(errorMiddleware);
+
 
 app.get("/", (req, res) => {
   res.send("Welcome");
