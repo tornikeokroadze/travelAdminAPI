@@ -1,3 +1,5 @@
+import { Parser } from 'json2csv';
+
 import Tour from "../models/tour.model.js";
 
 // Get all tours
@@ -75,7 +77,7 @@ export const updateTour = async (req, res, next) => {
     }
 
     const { id } = req.params; // Get id from URL params
-    
+
     const {
       title,
       description,
@@ -130,6 +132,52 @@ export const deleteTour = async (req, res, next) => {
       success: true,
       message: "Tour deleted successfully",
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Search a tours
+export const searchTours = async (req, res, next) => {
+  try {
+    const filters = req.query;
+
+    if (!filters) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required",
+      });
+    }
+
+    const results = await Tour.search(filters);
+    res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Export tours in CSV format
+export const exportToursToCSV = async (req, res, next) => {
+  try {
+    const tours = await Tour.findAll();
+
+    const fields = [
+      'id',
+      'title',
+      'description',
+      'location',
+      'price',
+      'duration',
+      'startDate',
+      'endDate',
+    ];
+
+    const json2csv = new Parser({ fields });
+    const csv = json2csv.parse(tours);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment('tours.csv');
+    return res.send(csv);
   } catch (error) {
     next(error);
   }

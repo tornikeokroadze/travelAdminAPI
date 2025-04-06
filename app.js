@@ -7,6 +7,7 @@ import { PORT } from "./config/env.js";
 import errorMiddleware from "./middleware/error.middleware.js";
 import { connectToDatabase } from "./database/pgsql.js";
 import checkExpiredTours from "./services/tour.service.js";
+import {apiLimiter} from "./middleware/rateLimiter.middleware.js"
 
 import adminRouter from "./routes/admin.routes.js";
 import authRouter from "./routes/auth.routes.js";
@@ -26,6 +27,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(apiLimiter);
 
 app.use("/api/auth", authRouter);
 app.use("/api/admins", adminRouter);

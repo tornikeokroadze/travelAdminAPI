@@ -98,6 +98,40 @@ const Tour = {
   async delete(id) {
     return await db.result('DELETE FROM "Tour" WHERE id = $1', [id]);
   },
+
+  async search(filters) {
+    const { location, type, start_date, end_date, query } = filters;
+
+    let sql = `SELECT * FROM "Tour" WHERE 1=1`;
+    const params = [];
+
+    if (location) {
+      params.push(`%${location}%`);
+      sql += ` AND location ILIKE $${params.length}`;
+    }
+
+    if (type) {
+      params.push(type);
+      sql += ` AND "typeId" = $${params.length}`;
+    }
+
+    if (start_date) {
+      params.push(start_date);
+      sql += ` AND "startDate" >= $${params.length}`;
+    }
+
+    if (end_date) {
+      params.push(end_date);
+      sql += ` AND "endDate" <= $${params.length}`;
+    }
+
+    if (query) {
+      params.push(`%${query}%`);
+      sql += ` AND (title ILIKE $${params.length} OR description ILIKE $${params.length})`;
+    }
+
+    return await db.any(sql, params);
+  },
 };
 
 export default Tour;

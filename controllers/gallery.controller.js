@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 import Gallery from "../models/gallery.model.js";
 
 // Get all gallery
@@ -28,9 +31,26 @@ export const getGallery = async (req, res, next) => {
 // Create a new gallery
 export const createGallery = async (req, res, next) => {
   try {
-    const { tourId, image } = req.body;
+    const { tourId } = req.body;
+    const images = req.files;
 
-    const newGallery = await Gallery.create({ tourId, image });
+    if (!images || images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one image is required.",
+      });
+    }
+
+    const galleryPromises = images.map((file) => {
+      const imagePath = file.filename;
+      return Gallery.create({
+        tourId,
+        image: imagePath,
+      });
+    });
+
+    // Wait for all images to be saved
+    const newGallery = await Promise.all(galleryPromises);
 
     res.status(201).json({ success: true, data: newGallery });
   } catch (error) {
@@ -41,18 +61,36 @@ export const createGallery = async (req, res, next) => {
 // Update a gallery
 export const updateGallery = async (req, res, next) => {
   try {
-    const gallery = await Gallery.findById(req.params.id);
+    const { id } = req.params;
+    const { tourId } = req.body;
+
+    const gallery = await Gallery.findById(id);
     if (!gallery) {
       return res
         .status(404)
         .json({ success: false, message: "Gallery not found" });
     }
 
-    const { id } = req.params; // Get id from URL params
+    const imagePath = req.file ? req.file.filename : null;
 
-    const { tourId, image } = req.body;
+    if (!imagePath) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Image file is required" });
+    }
 
-    const updatedGallery = await Gallery.update(id, { tourId, image });
+    // DELETE OLD FILE from uploads/images
+    // const oldImagePath = path.join("uploads", "images", gallery.image);
+    // fs.unlink(oldImagePath, (err) => {
+    //   if (err) {
+    //     console.error("Failed to delete old image:", err.message);
+    //   }
+    // });
+
+    const updatedGallery = await Gallery.update(id, {
+      tourId,
+      image: imagePath,
+    });
 
     res.status(200).json({ success: true, data: updatedGallery });
   } catch (error) {
@@ -65,6 +103,14 @@ export const deleteGallery = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    const gallery = await Gallery.findById(id);
+    if (!gallery) {
+      return res.status(404).json({
+        success: false,
+        message: "Gallery not found",
+      });
+    }
+
     const result = await Gallery.delete(id);
 
     if (result.rowCount === 0) {
@@ -74,9 +120,16 @@ export const deleteGallery = async (req, res, next) => {
       });
     }
 
+    const imagePath = path.join("uploads", "images", gallery.image);
+    fs.unlink(imagePath, (err) => {
+      if (err) {
+        console.warn("Warning: Failed to delete image file:", err.message);
+      }
+    });
+
     res.status(200).json({
       success: true,
-      message: "Gallery deleted successfully",
+      message: "Gallery and image deleted successfully",
     });
   } catch (error) {
     next(error);

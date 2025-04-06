@@ -1,18 +1,30 @@
 import { Router } from "express";
 
 import authorize from "../middleware/auth.middleware.js";
-import { getTours, getTour, createTour, updateTour, deleteTour } from "../controllers/tour.controller.js";
+import {
+  searchTours,
+  exportToursToCSV,
+  getTours,
+  getTour,
+  createTour,
+  updateTour,
+  deleteTour,
+} from "../controllers/tour.controller.js";
 
 const tourRouter = Router();
 
-tourRouter.get('/', authorize, getTours);
+tourRouter.get("/search", authorize, searchTours);
+tourRouter.get('/export/csv', authorize, exportToursToCSV);
 
-tourRouter.get('/:id', authorize, getTour);
 
-tourRouter.post('/', authorize, createTour);
+tourRouter.get("/", authorize, getTours);
 
-tourRouter.put('/:id', authorize, updateTour);
+tourRouter.get("/:id", authorize, getTour);
 
-tourRouter.delete('/:id', authorize, deleteTour);
+tourRouter.post("/", authorize, createTour);
+
+tourRouter.put("/:id", authorize, updateTour);
+
+tourRouter.delete("/:id", authorize, deleteTour);
 
 export default tourRouter;
