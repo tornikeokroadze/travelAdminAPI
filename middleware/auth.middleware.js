@@ -39,7 +39,7 @@ const authorize = async (req, res, next) => {
           .json({ success: false, message: "This account is blocked" });
 
       if (
-        req.originalUrl.includes("/admin") &&
+        (req.originalUrl.includes("/admin") || req.originalUrl.includes("/db")) &&
         admin.job_title !== "Administartor"
       ) {
         return res

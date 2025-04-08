@@ -2,12 +2,16 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cron from "node-cron";
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 import { PORT } from "./config/env.js";
 
 import errorMiddleware from "./middleware/error.middleware.js";
 import { connectToDatabase } from "./database/pgsql.js";
 import checkExpiredTours from "./services/tour.service.js";
-import {apiLimiter} from "./middleware/rateLimiter.middleware.js"
+import { apiLimiter } from "./middleware/rateLimiter.middleware.js"
 
 import adminRouter from "./routes/admin.routes.js";
 import authRouter from "./routes/auth.routes.js";
@@ -20,7 +24,17 @@ import bookRouter from "./routes/book.routes.js";
 import teamRouter from "./routes/team.routes.js";
 import contactRouter from "./routes/contact.routes.js";
 import aboutRouter from "./routes/about.routes.js";
+import dbToolsRouter from "./routes/dbTools.routes.js";
 
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure folders exist
+['uploads', 'backups'].forEach(dir => {
+  const fullPath = path.join(__dirname, dir);
+  if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath);
+});
 
 const app = express();
 
@@ -40,6 +54,7 @@ app.use("/api/books", bookRouter);
 app.use("/api/team", teamRouter);
 app.use("/api/contact", contactRouter);
 app.use("/api/about", aboutRouter);
+app.use("/api/db", dbToolsRouter);
 
 // This will run at 12:00 AM (midnight) every day
 cron.schedule('0 0 * * *', async () => {
@@ -47,11 +62,6 @@ cron.schedule('0 0 * * *', async () => {
 });
 
 app.use(errorMiddleware);
-
-
-app.get("/", (req, res) => {
-  res.send("Welcome");
-});
 
 app.listen(PORT, async () => {
   console.log("server runing");
