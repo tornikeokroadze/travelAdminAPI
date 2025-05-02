@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import authorize from "../middleware/auth.middleware.js";
+import { validateTour } from "../middleware/validateTour.middleware.js";
 import {
   searchTours,
   exportToursToCSV,
@@ -14,14 +15,13 @@ import {
 const tourRouter = Router();
 
 tourRouter.get("/search", authorize, searchTours);
-tourRouter.get('/export/csv', authorize, exportToursToCSV);
-
+tourRouter.get("/export/csv", authorize, exportToursToCSV);
 
 tourRouter.get("/", authorize, getTours);
 
 tourRouter.get("/:id", authorize, getTour);
 
-tourRouter.post("/", authorize, createTour);
+tourRouter.post("/", authorize, validateTour, createTour);
 
 tourRouter.put("/:id", authorize, updateTour);
 

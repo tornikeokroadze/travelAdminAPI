@@ -191,7 +191,7 @@ export const forgotPassword = async (req, res, next) => {
     await Admin.saveResetToken(email, resetToken, resetTokenExpires);
 
     // Generate Reset Link
-    const resetLink = `${BASE_URL}api/auth/reset-password?token=${resetToken}`;
+    const resetLink = `${BASE_URL}reset-password?token=${resetToken}`;
 
     console.log(resetLink);
 
@@ -207,32 +207,8 @@ export const forgotPassword = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Reset link sent to your email.",
-      resetToken: resetToken,
+      resetToken: resetToken, // The token should not be sent!!!!!!!
     });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const verifyToken = async (req, res, next) => {
-  try {
-    const { token } = req.query;
-
-    if (!token) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Token required" });
-    }
-
-    const admin = await Admin.verifyResetToken(token);
-
-    if (!admin) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid or expired token" });
-    }
-
-    res.status(200).json({ success: true, message: "Token is valid" });
   } catch (error) {
     next(error);
   }
@@ -240,12 +216,18 @@ export const verifyToken = async (req, res, next) => {
 
 export const resetPassword = async (req, res, next) => {
   try {
-    const { token, new_password } = req.body;
+    const { token, password, confirmPassword } = req.body;
 
-    if (!token || !new_password) {
+    if (!token || !password || !confirmPassword) {
       return res
         .status(400)
-        .json({ success: false, message: "Token and new password required" });
+        .json({ success: false, message: "Token and password required" });
+    }
+
+    if (password !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match." });
     }
 
     const admin = await Admin.verifyResetToken(token);
@@ -257,7 +239,7 @@ export const resetPassword = async (req, res, next) => {
 
     // Hash the password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(new_password, salt);
+    const hashedPassword = await bcrypt.hash(password, salt);
     await Admin.resetPassword(admin.email, hashedPassword);
 
     res.json({ success: true, message: "Password reset successfully!" });

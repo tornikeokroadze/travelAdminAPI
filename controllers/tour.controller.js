@@ -1,4 +1,5 @@
 import { Parser } from 'json2csv';
+import { validationResult } from 'express-validator';
 
 import Tour from "../models/tour.model.js";
 
@@ -29,6 +30,15 @@ export const getTour = async (req, res, next) => {
 
 // Create a new tour
 export const createTour = async (req, res, next) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array(),
+    });
+  }
+
   try {
     const {
       title,
