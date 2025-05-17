@@ -17,11 +17,11 @@ const authorize = async (req, res, next) => {
     if (!token)
       return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    if (req.cookies.token !== token) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Token is invalid" });
-    }
+    // if (req.cookies.token !== token) {
+    //   return res
+    //     .status(401)
+    //     .json({ success: false, message: "Token is invalid" });
+    // }
 
     const decoded = jwt.verify(token, JWT_SECRET);
 
@@ -36,7 +36,7 @@ const authorize = async (req, res, next) => {
       if (admin.block)
         return res
           .status(403)
-          .json({ success: false, message: "This account is blocked" });
+          .json({ success: false, reason: "blocked", message: "This account is blocked" });
 
       if (
         (req.originalUrl.includes("/admin") || req.originalUrl.includes("/db")) &&

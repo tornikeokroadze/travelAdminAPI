@@ -74,9 +74,9 @@ export const signIn = async (req, res, next) => {
 
     // If the admin doesn't exist
     if (!admin) {
-      const error = new Error("Admin not found");
-      error.statusCode = 404;
-      throw error;
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     if (admin.block) {
@@ -90,9 +90,9 @@ export const signIn = async (req, res, next) => {
 
     // If password doesn't match
     if (!isMatch) {
-      const error = new Error("Invalid credentials");
-      error.statusCode = 401;
-      throw error;
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     // Generate a JWT token for the admin
@@ -132,12 +132,12 @@ export const signIn = async (req, res, next) => {
 
 export const signOut = async (req, res, next) => {
   try {
-    if (!req.cookies.token) {
-      return res.status(400).json({
-        success: false,
-        message: "You are already signed out",
-      });
-    }
+    // if (!req.cookies.token) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "You are already signed out",
+    //   });
+    // }
 
     res.clearCookie("token", {
       httpOnly: true,
