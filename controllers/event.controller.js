@@ -37,6 +37,9 @@ export const createEvent = async (req, res, next) => {
       event_level,
     });
 
+    const io = req.app.get("io");
+    io.emit("event:created", newEvent);
+
     res.status(201).json({ success: true, data: newEvent });
   } catch (error) {
     next(error);
@@ -64,6 +67,9 @@ export const updateEvent = async (req, res, next) => {
       event_level,
     });
 
+    const io = req.app.get("io");
+    io.emit("event:updated", updatedEvent);
+
     res.status(200).json({ success: true, data: updatedEvent });
   } catch (error) {
     next(error);
@@ -83,6 +89,9 @@ export const deleteEvent = async (req, res, next) => {
         message: "Event not found",
       });
     }
+
+    const io = req.app.get("io");
+    io.emit("event:deleted", { id });
 
     res.status(200).json({
       success: true,

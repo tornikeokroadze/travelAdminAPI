@@ -7,6 +7,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import http from "http";
+import { Server as SocketIO } from "socket.io";
+
 import { PORT } from "./config/env.js";
 
 import errorMiddleware from "./middleware/error.middleware.js";
@@ -40,12 +43,24 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+const server = http.createServer(app);
+
+const io = new SocketIO(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
+
+app.set("io", io);
+
 app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -73,7 +88,7 @@ cron.schedule("0 0 * * *", async () => {
 
 app.use(errorMiddleware);
 
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   console.log("server runing");
 
   await connectToDatabase();
