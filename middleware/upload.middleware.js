@@ -1,4 +1,3 @@
-// middlewares/upload.js
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -51,8 +50,17 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-export const upload = multer({
+export const uploadMultiple = multer({
   storage,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit per file
-}).array("images", 10);
+}).fields([
+  { name: "image", maxCount: 1 },
+  { name: "gallery[]", maxCount: 10 },
+]);
+
+export const uploadSingle = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single("image");

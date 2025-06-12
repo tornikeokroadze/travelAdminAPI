@@ -79,6 +79,8 @@ app.use("/api/contact", contactRouter);
 app.use("/api/about", aboutRouter);
 app.use("/api/events", eventRouter);
 app.use("/api/db", dbToolsRouter);
+app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
+
 
 // This will run at 12:00 AM (midnight) every day
 cron.schedule("0 0 * * *", async () => {

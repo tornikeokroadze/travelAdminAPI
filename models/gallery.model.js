@@ -9,6 +9,16 @@ const Gallery = {
     return await db.oneOrNone('SELECT * FROM "Gallery" WHERE id = $1', [id]);
   },
 
+  async findByTourId(tourId) {
+    return await db.any('SELECT * FROM "Gallery" WHERE "tourId" = $1', [
+      tourId,
+    ]);
+  },
+
+  async findManyByTourIds(ids) {
+    return db.any(`SELECT * FROM "Gallery" WHERE "tourId" IN ($1:csv)`, [ids]);
+  },
+
   async create({ tourId, image }) {
     const now = new Date().toISOString();
 
@@ -19,20 +29,44 @@ const Gallery = {
     );
   },
 
-  async update(id, updateData) {
-    const { tourId, image } = updateData;
-    return await db.one(
-      `UPDATE "Gallery" SET 
-      "tourId" = COALESCE($1, "tourId"), 
-      image = COALESCE($2, image),
-      "updatedAt" = CURRENT_TIMESTAMP
-      WHERE id = $3 RETURNING *`,
-      [tourId, image, id]
-    );
+  async insertMany(galleryImages) {
+    if (!Array.isArray(galleryImages) || galleryImages.length === 0) {
+      throw new Error("galleryImages must be a non-empty array");
+    }
+
+    const now = new Date().toISOString();
+
+    const query = `
+      INSERT INTO "Gallery" ("tourId", image, "updatedAt")
+      VALUES 
+        ${galleryImages
+          .map(
+            (_, index) =>
+              `($1, $${index + 2}, $${index + 2 + galleryImages.length})`
+          )
+          .join(", ")}
+    `;
+
+    const values = [
+      galleryImages[0].tourId,
+      ...galleryImages.map((img) => img.image),
+      ...Array(galleryImages.length).fill(now),
+    ];
+
+    await db.none(query, values);
+    return true;
   },
 
   async delete(id) {
     return await db.result('DELETE FROM "Gallery" WHERE id = $1', [id]);
+  },
+
+  async deleteByTourId(tourId) {
+    return await db.none('DELETE FROM "Gallery" WHERE "tourId" = $1', [tourId]);
+  },
+
+  async deleteByFilename(fileName) {
+    return await db.none('DELETE FROM "Gallery" WHERE image = $1', [fileName]);
   },
 };
 

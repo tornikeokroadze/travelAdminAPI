@@ -72,7 +72,8 @@ export const updateAdmin = async (req, res, next) => {
 
     const { id } = req.params; // Get id from URL params
 
-    const { name, email, password, new_password, job_title, role, block } = req.body;
+    const { name, email, password, new_password, job_title, role, block } =
+      req.body;
 
     const admin = await Admin.findByEmail(email);
 
@@ -88,9 +89,9 @@ export const updateAdmin = async (req, res, next) => {
 
     // If password doesn't match
     if (!isMatch) {
-      const error = new Error("Invalid credentials");
-      error.statusCode = 401;
-      throw error;
+      return res
+        .status(404)
+        .json({ success: false, message: "password doesn't match" });
     }
 
     // Hash the new password
@@ -125,8 +126,10 @@ export const deleteAdmin = async (req, res, next) => {
         .json({ success: false, message: "Admin not found" });
     }
 
-    if(admin.job_title === "Administartor") {
-      return res.status(403).json({ message: "You can not delete Administartor" });
+    if (admin.job_title === "Administartor") {
+      return res
+        .status(403)
+        .json({ message: "You can not delete Administartor" });
     }
 
     const result = await Admin.delete(id);

@@ -1,4 +1,5 @@
 import { db } from "../database/pgsql.js";
+import esClient from "../services/elasticsearch.service.js";
 
 const Tour = {
   async findAll() {
@@ -7,6 +8,15 @@ const Tour = {
 
   async findById(id) {
     return await db.oneOrNone('SELECT * FROM "Tour" WHERE id = $1', [id]);
+  },
+
+  async findManyByIds(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return [];
+    }
+
+    const query = 'SELECT * FROM "Tour" WHERE id = ANY($1)';
+    return await db.any(query, [ids]);
   },
 
   async create({
@@ -98,6 +108,75 @@ const Tour = {
   async delete(id) {
     return await db.result('DELETE FROM "Tour" WHERE id = $1', [id]);
   },
+
+  async deleteMany(ids) {
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(",");
+    const query = `DELETE FROM "Tour" WHERE id IN (${placeholders})`;
+    return await db.result(query, ids);
+  },
+
+  // async search(filters) {
+  //   const { location, type, start_date, end_date, query } = filters;
+
+  //   const esQuery = {
+  //     index: "tours",
+  //     body: {
+  //       query: {
+  //         bool: {
+  //           must: [],
+  //           filter: [],
+  //         },
+  //       },
+  //     },
+  //   };
+
+  //   if (query) {
+  //     esQuery.body.query.bool.must.push({
+  //       multi_match: {
+  //         query,
+  //         fields: ["title^2", "description"],
+  //         fuzziness: "auto",
+  //       },
+  //     });
+  //   }
+
+  //   if (location) {
+  //     esQuery.body.query.bool.must.push({
+  //       match: {
+  //         location,
+  //       },
+  //     });
+  //   }
+
+  //   if (type) {
+  //     esQuery.body.query.bool.filter.push({
+  //       term: { typeId: type },
+  //     });
+  //   }
+
+  //   if (start_date) {
+  //     esQuery.body.query.bool.filter.push({
+  //       range: {
+  //         startDate: {
+  //           gte: start_date,
+  //         },
+  //       },
+  //     });
+  //   }
+
+  //   if (end_date) {
+  //     esQuery.body.query.bool.filter.push({
+  //       range: {
+  //         endDate: {
+  //           lte: end_date,
+  //         },
+  //       },
+  //     });
+  //   }
+
+  //   const result = await esClient.search(esQuery);
+  //   return result.hits.hits.map((hit) => hit._source);
+  // },
 
   async search(filters) {
     const { location, type, start_date, end_date, query } = filters;

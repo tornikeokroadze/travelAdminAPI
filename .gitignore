@@ -64,3 +64,6 @@ typings/
 
 # Docker
 docker-compose.yml
+
+backups/
+uploads/

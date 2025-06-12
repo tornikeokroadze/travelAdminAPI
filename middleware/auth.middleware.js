@@ -34,13 +34,11 @@ const authorize = async (req, res, next) => {
           .json({ success: false, message: "Unauthorized" });
 
       if (admin.block)
-        return res
-          .status(403)
-          .json({
-            success: false,
-            reason: "blocked",
-            message: "This account is blocked",
-          });
+        return res.status(403).json({
+          success: false,
+          reason: "blocked",
+          message: "This account is blocked",
+        });
 
       //req.originalUrl.includes("/admin") ||
       if (
@@ -62,7 +60,11 @@ const authorize = async (req, res, next) => {
           .json({ success: false, message: "You have no permission" });
       }
 
-      if (req.method == "PUT" && admin.role < 3) {
+      if (
+        req.method == "PUT" &&
+        admin.role < 3 &&
+        !req.originalUrl.includes("/admins")
+      ) {
         return res
           .status(403)
           .json({ success: false, message: "You have no permission" });
