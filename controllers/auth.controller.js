@@ -10,6 +10,7 @@ import {
   BASE_URL,
   SENDING_EMAIL_ADDRESS,
 } from "../config/env.js";
+import validator from "validator";
 import transport from "../middleware/sendMail.middleware.js";
 
 export const signUp = async (req, res, next) => {
@@ -68,7 +69,13 @@ export const signIn = async (req, res, next) => {
       });
     }
 
-    const { email, password } = req.body;
+    let email = req.body.email || "";
+    let password = req.body.password || "";
+
+    email = validator.trim(email || "");
+    email = validator.normalizeEmail(email);
+    password = validator.trim(password || "");
+    password = validator.escape(password);
 
     const admin = await Admin.findByEmail(email);
 
